@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نتائج المباريات</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0d1117;
+    color: #fff;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: #161b22;
+    padding: 12px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+}
+
+.navbar a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    transition: 0.3s;
+}
+
+.navbar a:hover {
+    background: #58a6ff;
+    color: #000;
+}
+
+/* العنوان */
+h1 {
+    text-align: center;
+    padding: 15px;
+    font-size: 22px;
+    background: #161b22;
+}
+
+/* الحاوية */
+.matches {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+}
+
+/* كرت المباراة */
+.match {
+    background: #161b22;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+}
+
+/* الفرق */
+.teams {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+}
+
+/* النتيجة */
+.score {
+    font-size: 18px;
+    font-weight: bold;
+    color: #58a6ff;
+}
+
+/* المجموعة أو الجولة */
+.info {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #aaa;
+}
+
+/* تحسين للشاشات الكبيرة */
+@media (min-width: 900px) {
+    .matches {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <a href="index.html">المجموعات</a>
+    <a href="results.html">النتائج</a>
+    <a href="knockout.html">Knockout</a>
+</nav>
+
+<h1>⚽ نتائج المباريات</h1>
+
+<div class="matches" id="matchesContainer">
+    <!-- سيتم ملء المباريات هنا من Firebase -->
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCWnIaLGk5R53wqNoj5v1INmgFaN8Wyzk8",
+  authDomain: "footballtournament-c4b8e.firebaseapp.com",
+  projectId: "footballtournament-c4b8e",
+  storageBucket: "footballtournament-c4b8e.firebasestorage.app",
+  messagingSenderId: "397214039140",
+  appId: "1:397214039140:web:9a347a3ce003f2c61df371"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// تحميل المباريات من Firebase
+function loadMatches() {
+    const container = document.getElementById("matchesContainer");
+    container.innerHTML = ""; // تفريغ المحتوى
+
+    db.collection("matches").orderBy("type").get()
+    .then(snapshot => {
+        snapshot.forEach(doc => {
+            const data = doc.data();
+
+            const matchDiv = document.createElement("div");
+            matchDiv.classList.add("match");
+
+            const teamsDiv = document.createElement("div");
+            teamsDiv.classList.add("teams");
+            teamsDiv.innerHTML = `<span>${data.team1}</span>
+                                  <span class="score">${data.goals1} - ${data.goals2}</span>
+                                  <span>${data.team2}</span>`;
+            matchDiv.appendChild(teamsDiv);
+
+            const infoDiv = document.createElement("div");
+            infoDiv.classList.add("info");
+            if(data.type === "groups") {
+                infoDiv.textContent = data.group || "";
+            } else {
+                infoDiv.textContent = data.stage || "";
+            }
+            matchDiv.appendChild(infoDiv);
+
+            container.appendChild(matchDiv);
+        });
+    })
+    .catch(err => {
+        console.error("حدث خطأ عند تحميل المباريات:", err);
+    });
+}
+
+// استدعاء عند تحميل الصفحة
+loadMatches();
+</script>
+
+</body>
+</html>

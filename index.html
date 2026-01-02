@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دوري المجموعات</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0d1117;
+    color: #fff;
+}
+
+/* Navbar */
+.navbar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: #161b22;
+    padding: 12px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar a {
+    color: #fff;
+    text-decoration: none;
+    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 20px;
+}
+
+.navbar a:hover {
+    background: #58a6ff;
+    color: #000;
+}
+
+/* Title */
+h1 {
+    text-align: center;
+    padding: 15px;
+    background: #161b22;
+}
+
+/* Groups */
+.groups {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 15px;
+}
+
+.group {
+    background: #161b22;
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+}
+
+.group h2 {
+    text-align: center;
+    color: #58a6ff;
+}
+
+/* Table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th {
+    background: #21262d;
+    padding: 8px;
+}
+
+td {
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid #30363d;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+/* Desktop */
+@media (min-width: 900px) {
+    .groups {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <a href="index.html">المجموعات</a>
+    <a href="results.html">النتائج</a>
+    <a href="knockout.html">Knockout</a>
+</nav>
+
+<h1>🏆 دوري المجموعات</h1>
+
+<div class="groups" id="groupsContainer"></div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCWnIaLGk5R53wqNoj5v1INmgFaN8Wyzk8",
+  authDomain: "footballtournament-c4b8e.firebaseapp.com",
+  projectId: "footballtournament-c4b8e",
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+async function loadGroups() {
+    const container = document.getElementById("groupsContainer");
+    container.innerHTML = "";
+
+    const groups = ["المجموعة A","المجموعة B","المجموعة C","المجموعة D"];
+
+    for (let groupName of groups) {
+
+        const snap = await db.collection("teams")
+            .where("group", "==", groupName)
+            .get();
+
+        if (snap.empty) continue;
+
+        let teams = [];
+
+        snap.forEach(doc => {
+            const t = doc.data();
+            teams.push({
+                name: t.name,
+                points: t.points || 0,
+                goalsFor: t.goalsFor || 0,
+                goalsAgainst: t.goalsAgainst || 0
+            });
+        });
+
+        // ترتيب كروي صحيح
+        teams.sort((a,b) =>
+            b.points - a.points ||
+            (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst) ||
+            b.goalsFor - a.goalsFor
+        );
+
+        const groupDiv = document.createElement("div");
+        groupDiv.className = "group";
+
+        let html = `
+            <h2>${groupName}</h2>
+            <table>
+              <tr>
+                <th>المركز</th>
+                <th>الفريق</th>
+                <th>النقاط</th>
+                <th>الأهداف</th>
+              </tr>
+        `;
+
+        teams.forEach((t, i) => {
+            html += `
+              <tr>
+                <td>${i + 1}</td>
+                <td>${t.name}</td>
+                <td>${t.points}</td>
+                <td>${t.goalsFor}</td>
+              </tr>
+            `;
+        });
+
+        html += "</table>";
+        groupDiv.innerHTML = html;
+        container.appendChild(groupDiv);
+    }
+}
+
+loadGroups();
+</script>
+
+</body>
+</html>
