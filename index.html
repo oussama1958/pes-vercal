@@ -13,7 +13,6 @@ body {
     color: #fff;
 }
 
-/* Navbar */
 .navbar {
     display: flex;
     justify-content: space-around;
@@ -38,14 +37,12 @@ body {
     color: #000;
 }
 
-/* Title */
 h1 {
     text-align: center;
     padding: 15px;
     background: #161b22;
 }
 
-/* Groups */
 .groups {
     display: flex;
     flex-direction: column;
@@ -65,7 +62,6 @@ h1 {
     color: #58a6ff;
 }
 
-/* Table */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -87,7 +83,6 @@ tr:last-child td {
     border-bottom: none;
 }
 
-/* Desktop */
 @media (min-width: 900px) {
     .groups {
         display: grid;
@@ -115,13 +110,12 @@ tr:last-child td {
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
 <script>
-const firebaseConfig = {
+firebase.initializeApp({
   apiKey: "AIzaSyCWnIaLGk5R53wqNoj5v1INmgFaN8Wyzk8",
   authDomain: "footballtournament-c4b8e.firebaseapp.com",
-  projectId: "footballtournament-c4b8e",
-};
+  projectId: "footballtournament-c4b8e"
+});
 
-firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 async function loadGroups() {
@@ -144,16 +138,17 @@ async function loadGroups() {
             const t = doc.data();
             teams.push({
                 name: t.name,
+                played: t.played || 0,
                 points: t.points || 0,
                 goalsFor: t.goalsFor || 0,
                 goalsAgainst: t.goalsAgainst || 0
             });
         });
 
-        // ترتيب كروي صحيح
+        // ترتيب احترافي
         teams.sort((a,b) =>
             b.points - a.points ||
-            (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst) ||
+            ( (b.goalsFor - b.goalsAgainst) - (a.goalsFor - a.goalsAgainst) ) ||
             b.goalsFor - a.goalsFor
         );
 
@@ -166,17 +161,23 @@ async function loadGroups() {
               <tr>
                 <th>المركز</th>
                 <th>الفريق</th>
+                <th>لعب</th>
                 <th>النقاط</th>
+                <th>±</th>
                 <th>الأهداف</th>
               </tr>
         `;
 
         teams.forEach((t, i) => {
+            const goalDiff = t.goalsFor - t.goalsAgainst;
+
             html += `
               <tr>
                 <td>${i + 1}</td>
                 <td>${t.name}</td>
+                <td>${t.played}</td>
                 <td>${t.points}</td>
+                <td>${goalDiff}</td>
                 <td>${t.goalsFor}</td>
               </tr>
             `;
