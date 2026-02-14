@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0d1117;
+    color: #fff;
+}
+.navbar {
+    display: flex;
+    justify-content: space-around;
+    background: #161b22;
+    padding: 12px 0;
+}
+.navbar a {
+    color: #fff;
+    text-decoration: none;
+}
+h1 {
+    text-align: center;
+    padding: 15px;
+    background: #161b22;
+}
+.admin { padding: 15px; }
+.card {
+    background: #161b22;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+label { display:block; margin-bottom:5px; }
+input, select {
+    width:100%;
+    padding:10px;
+    margin-bottom:12px;
+    background:#0d1117;
+    border:none;
+    border-radius:8px;
+    color:#fff;
+}
+button {
+    width:100%;
+    padding:12px;
+    background:#58a6ff;
+    border:none;
+    border-radius:20px;
+    font-weight:bold;
+}
+.match-box {
+    background:#0d1117;
+    padding:10px;
+    border-radius:10px;
+    margin-bottom:10px;
+}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar">
+    <a href="index.html">المجموعات</a>
+    <a href="results.html">النتائج</a>
+    <a href="knockout.html">Knockout</a>
+    <a href="admin.html">Admin</a>
+</nav>
+
+<h1>⚙️ Admin Panel</h1>
+
+<div class="admin">
+
+<!-- إضافة فريق -->
+<div class="card">
+<h2>إضافة فريق</h2>
+
+<label>اسم الفريق</label>
+<input id="teamName">
+
+<label>المجموعة</label>
+<select id="teamGroup">
+<option>المجموعة A</option>
+<option>المجموعة B</option>
+<option>المجموعة C</option>
+<option>المجموعة D</option>
+</select>
+
+<button onclick="addTeam()">إضافة</button>
+</div>
+
+<!-- إضافة نتيجة -->
+<div class="card">
+<h2>إضافة نتيجة مباراة</h2>
+
+<label>نوع المباراة</label>
+<select id="type" onchange="toggleType()">
+<option value="groups">دور المجموعات</option>
+<option value="knockout">Knockout</option>
+</select>
+
+<div id="groupBox">
+<label>المجموعة</label>
+<select id="groupSelect" onchange="loadGroupTeams()">
+<option>المجموعة A</option>
+<option>المجموعة B</option>
+<option>المجموعة C</option>
+<option>المجموعة D</option>
+</select>
+</div>
+
+<div id="stageBox" style="display:none;">
+<label>الدور</label>
+<select id="stageSelect">
+<option>ربع النهائي</option>
+<option>نصف النهائي</option>
+<option>النهائي</option>
+</select>
+</div>
+
+<div class="match-box">
+<label>الفريق الأول</label>
+<select id="team1"></select>
+<label>أهدافه</label>
+<input type="number" id="g1" min="0">
+</div>
+
+<div class="match-box">
+<label>الفريق الثاني</label>
+<select id="team2"></select>
+<label>أهدافه</label>
+<input type="number" id="g2" min="0">
+</div>
+
+<button onclick="saveMatch()">حفظ النتيجة</button>
+</div>
+
+</div>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyCWnIaLGk5R53wqNoj5v1INmgFaN8Wyzk8",
+  authDomain: "footballtournament-c4b8e.firebaseapp.com",
+  projectId: "footballtournament-c4b8e"
+});
+const db = firebase.firestore();
+
+let teams = [];
+
+// إضافة فريق
+function addTeam(){
+ const name = teamName.value;
+ const group = teamGroup.value;
+ if(!name) return alert("اكتب اسم الفريق");
+
+ db.collection("teams").add({
+   name, group,
+   points:0,
+   goalsFor:0,
+   goalsAgainst:0,
+   played:0
+ }).then(()=>{
+   teamName.value="";
+   loadTeams();
+ });
+}
+
+// تحميل الفرق
+function loadTeams(){
+ db.collection("teams").get().then(snap=>{
+   teams=[];
+   snap.forEach(d=>teams.push({id:d.id,...d.data()}));
+   loadGroupTeams();
+ });
+}
+loadTeams();
+
+// فرق حسب المجموعة
+function loadGroupTeams(){
+ team1.innerHTML="";
+ team2.innerHTML="";
+ teams.filter(t=>t.group===groupSelect.value)
+ .forEach(t=>{
+   team1.innerHTML+=`<option value="${t.id}">${t.name}</option>`;
+   team2.innerHTML+=`<option value="${t.id}">${t.name}</option>`;
+ });
+}
+
+// تغيير النوع
+function toggleType(){
+ if(type.value==="knockout"){
+   groupBox.style.display="none";
+   stageBox.style.display="block";
+   team1.innerHTML=""; team2.innerHTML="";
+   teams.forEach(t=>{
+     team1.innerHTML+=`<option value="${t.id}">${t.name}</option>`;
+     team2.innerHTML+=`<option value="${t.id}">${t.name}</option>`;
+   });
+ } else {
+   groupBox.style.display="block";
+   stageBox.style.display="none";
+   loadGroupTeams();
+ }
+}
+
+// حفظ المباراة + تحديث النقاط
+function saveMatch(){
+ if(team1.value===team2.value) return alert("نفس الفريق");
+
+ const t1 = teams.find(t=>t.id===team1.value);
+ const t2 = teams.find(t=>t.id===team2.value);
+ const g1v = +g1.value;
+ const g2v = +g2.value;
+
+ // حفظ المباراة
+ db.collection("matches").add({
+   type:type.value,
+   group:type.value==="groups"?groupSelect.value:"",
+   stage:type.value==="knockout"?stageSelect.value:"",
+   team1:t1.name,
+   team2:t2.name,
+   goals1:g1v,
+   goals2:g2v,
+   date:new Date()
+ });
+
+ if(type.value==="groups"){
+   let p1=0,p2=0;
+   if(g1v>g2v){p1=3;}
+   else if(g1v<g2v){p2=3;}
+   else{p1=1;p2=1;}
+
+   db.collection("teams").doc(t1.id).update({
+     points:t1.points+p1,
+     goalsFor:t1.goalsFor+g1v,
+     goalsAgainst:t1.goalsAgainst+g2v,
+     played:t1.played+1
+   });
+
+   db.collection("teams").doc(t2.id).update({
+     points:t2.points+p2,
+     goalsFor:t2.goalsFor+g2v,
+     goalsAgainst:t2.goalsAgainst+g1v,
+     played:t2.played+1
+   });
+ }
+
+ alert("تم الحفظ ✔");
+ g1.value=""; g2.value="";
+ loadTeams();
+}
+</script>
+
+</body>
+</html>
